@@ -36,6 +36,8 @@ function preload(){ //sprite loading, any other prep pre-game
   this.load.image("clouds-white", "assets/clouds-white.png");
   this.load.image("clouds-white-small", "assets/clouds-white-small.png");
 
+  this.load.image("life", "assets/heart.png")
+
   this.load.spritesheet('player', 'assets/dude.png',  { //80, 111 for robot
     frameWidth: 32,
     frameHeight: 48
@@ -45,10 +47,18 @@ function preload(){ //sprite loading, any other prep pre-game
     frameWidth: 80,
     frameHeight: 111
     }); //image is split into series of frames
+
+  //load music and sound effects
+  this.load.audio("theme", ["assets/theme.mp3"]);
+  this.load.audio("victory", ["assets/victory.mp3"]);
+  this.load.audio("jump", ["assets/jump.mp3"]);
+  this.load.audio("star", ["assets/star.wav"]);
+  this.load.audio("death", ["assets/died.wav"]);
 }
 
-let player, cursors, scoreText, gameOverText, enemy, controlConfig, controls, cloudsWhite, cloudsWhiteSmall, bombs, stars, layer;
+let player, cursors, scoreText, gameOverText, livesLeftText, enemy, controlConfig, controls, cloudsWhite, cloudsWhiteSmall, bombs, stars, layer;
 let score = 0, bombOrStarDelay = 4000, bombOrStarIterations = 0, livesLeft = 3, gameOverBool = false;
+let themeMusic, jumpSound, starSound, victoryMusic, deathSound;
 
 //array of objects
 /**
@@ -63,6 +73,19 @@ function create(){ //pre-game loop set up
   this.add.tileSprite(400, 300, 10240, 800, 'sky');
   cloudsWhite = this.add.tileSprite(640, 200, 10240, 400, "clouds-white");
   cloudsWhiteSmall = this.add.tileSprite(640, 200, 10240, 400, "clouds-white-small");
+
+  //load music and sound effects
+  jumpSound  = this.sound.add("jump", { loop: false });
+  jumpSound.allowMultiple = true;
+  starSound  = this.sound.add("star", { loop: false });
+  starSound.allowMultiple = true;
+  deathSound  = this.sound.add("death", { loop: false });
+  deathSound.allowMultiple = true;
+  victoryMusic  = this.sound.add("victory", { loop: true, seek: 0 }); 
+  themeMusic = this.sound.add("theme", { loop: true, seek: 0 });
+  themeMusic.play();
+  victoryMusic.play();
+  victoryMusic.pause();
 
   // When loading from an array, make sure to specify the tileWidth and tileHeight
   let map = this.make.tilemap({ data: levelData[0].levelMap, tileWidth: 16, tileHeight: 16 });
@@ -122,11 +145,14 @@ function create(){ //pre-game loop set up
   })
 
   //setting the scroll factor to 0 makes it track the camera
-  scoreText = this.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
+  scoreText = this.add.text(16, 16, 'Score: 0', { fontSize: '32px', fill: '#000' });
   scoreText.setScrollFactor(0);
 
-  gameOverText = this.add.text(300, 200, '', { fontSize: '32px', fill: '#000' })
+  gameOverText = this.add.text(300, 200, ' ', { fontSize: '32px', fill: '#000' })
   gameOverText.setScrollFactor(0);
+
+  livesLeftText = this.add.text(300, 16, `Lives Left: ${livesLeft}`, { fontSize: '32px', fill: '#000' })
+  livesLeftText.setScrollFactor(0);
 
   //Listen for keyboard inputs
   cursors = this.input.keyboard.createCursorKeys();
@@ -146,7 +172,8 @@ function update(){
   cloudsWhiteSmall.tilePositionX += 0.25;
 
   if (cursors.left.isDown){
-        player.setVelocityX(-160);
+        if(player.x > 15) player.setVelocityX(-160);
+        else player.setVelocityX(0);
         player.anims.play('left', true);
     }else if (cursors.right.isDown){
       player.setVelocityX(160);
@@ -159,10 +186,30 @@ function update(){
   if (cursors.up.isDown && player.body.onFloor())//.touching.down
   { 
     player.setVelocityY(-330);
+    jumpSound.play()
   }
 
   //cycle through enemy objects, set their direction if needed
   setEnemyDirection();
+
+  //check win condition, if player is within 20px of end of map, pause physics and show YOU WIN!
+  if(checkWin()){
+    themeMusic.pause();
+    gameOverText.setText("YOU WIN!!!");
+    victoryMusic.resume()
+    gameOverBool = true;
+    this.physics.pause();
+  }
+
+  //check player has not fallen in a hole
+  if(player.body.y > layer.height && gameOverBool===false){
+    this.physics.pause();
+    gameOver(player, this);
+    gameOverText.setText(livesLeft > 0 ? ' ' : 'Game Over');  
+  }
+
+  console.log(`X: ${player.body.x}`)
+  console.log(`Y: ${player.body.y}`)
 }
 
 //function to generate random bomb or star at decreasing intervals 
@@ -212,9 +259,9 @@ function loadPlayer(game){
   player = game.physics.add.sprite(100, 450, 'player'); //place at start of level
   player.setBounce(0.2); //how much they bounce when hitting ground
   player.body.setGravityY(10); //how much gravity affects them (the lower, the higher they jump)
-  player.setCollideWorldBounds(true) //Set to true if you don't want them to go off screen
+  // player.setCollideWorldBounds(true) //Set to true if you don't want them to go off screen
   game.physics.add.collider(player, layer); //this stops sprite from falling through the floor
-  game.physics.add.collider(player, bombs, (player, bomb) => {game.physics.pause(); gameOver(player, game); gameOverText.setText('Game Over');}, null, game);
+  game.physics.add.collider(player, bombs, (player, bomb) => {game.physics.pause(); gameOver(player, game); gameOverText.setText(livesLeft > 0 ? ' ' : 'Game Over');}, null, game);
     
   game.physics.add.overlap(player, stars, (player, star) => {collectStar(player, star)}, null, this);
     
@@ -223,7 +270,7 @@ function loadPlayer(game){
       if(hitFromTop(player, enemy)) destroyEnemy(enemy);
       else {
           gameOver(player, game);
-          gameOverText.setText('Game Over'); 
+          gameOverText.setText(livesLeft > 0 ? ' ' : 'Game Over'); 
           game.physics.pause();
         }
       }, null, game);
@@ -231,6 +278,12 @@ function loadPlayer(game){
 
   
    game.cameras.main.startFollow(player);
+}
+
+function checkWin(){
+  if(layer.width - Math.floor(player.x) <= 20){
+    return true;
+  } else return false
 }
 
 //function to check on each enemy 
@@ -252,20 +305,23 @@ function setEnemyDirection(){
 //Function handles point scoring of star
 function collectStar (player, star)
 {
+    starSound.play();
     star.disableBody(true, true);
     score += 10;
     scoreText.setText('Score: ' + score);
 }
 
 //Function to handle hitting a bomb, enemy or running out of time
-function gameOver (player, game)
+function gameOver (player, game, delay=1000)
 {
     player.setTint(0xff0000);
     player.anims.play('turn');
     gameOverBool = true;
+    deathSound.play();
     livesLeft--;
+    livesLeftText.setText(`Lives Left: ${livesLeft}`);
     if(livesLeft){
-      game.time.addEvent({ delay: 1000, callback: resetGame, callbackScope: game, loop: false });
+      game.time.addEvent({ delay: delay, callback: resetGame, callbackScope: game, loop: false });
     }
 }
 
@@ -284,8 +340,9 @@ function resetGame(){
   stars.children.iterate(function (star){
     star.disableBody(true, true);
   });
-  gameOverText.destroy();
-
+  
+  gameOverText.setText(' '); 
+  
   //resume game physics
   this.physics.resume();
 
@@ -297,8 +354,6 @@ function resetGame(){
 
   //set gameOverBool to false
   gameOverBool = false;
-
-  
 }
 
 //on collision with enemy, check if we have hit the top or the side
@@ -309,6 +364,7 @@ function hitFromTop(player, object){
 
   //Function destroy enemy if we have hit it from the top
 function destroyEnemy(enemy){
+  starSound.play();
   enemy.disableBody(true, true);
   score += 50;
   scoreText.setText('Score: ' + score);
