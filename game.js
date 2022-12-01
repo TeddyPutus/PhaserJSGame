@@ -150,7 +150,7 @@ class GameScene extends Phaser.Scene {
         //Listen for keyboard inputs
         this.cursors = this.input.keyboard.createCursorKeys();
         
-        //Set the world bounds to equal the size of our tilemap - this menas if change the tilemap, the world bounds will update
+        //Set the world bounds to equal the size of our tilemap - this means if change the tilemap, the world bounds will update
         this.physics.world.setBounds(0, 0, this.layer.width, this.layer.height)
         this.cameras.main.setBounds(0, 0, this.layer.x + this.layer.width, 0);
       
