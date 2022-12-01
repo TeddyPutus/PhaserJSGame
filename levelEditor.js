@@ -117,7 +117,7 @@ class LevelEditorScene extends Phaser.Scene {
             } 
         });
 
-        this.playBtn.on('pointerdown', () => {
+        this.playBtn.on('pointerdown', async () => {
             // this.themeMusic.pause();
             let levelData = []; //defaultLevelData[0].levelMap;
             for(let i = 0; i<= 37; i++){
@@ -127,11 +127,15 @@ class LevelEditorScene extends Phaser.Scene {
                 }
                 levelData.push(row);
             }
+            
+            await this.postLevelData(levelData, this.enemies);
 
-            game.scene.start('GameScene', {level : {
-                //need to filter the layer data, we want an array that contains .index of each element
-                levelMap : levelData, enemies: this.enemies
-            }});
+            game.scene.start('MenuScene');
+
+            // game.scene.start('GameScene', {level : {
+            //     //need to filter the layer data, we want an array that contains .index of each element
+            //     levelMap : levelData, enemies: this.enemies
+            // }});
             game.scene.stop('LevelEditorScene');
     
         });
@@ -154,7 +158,7 @@ class LevelEditorScene extends Phaser.Scene {
         this.cameras.main.setBounds(0, 0, this.layer.width, 0);
         
       }
-      
+
       update(delta){
       
         this.cloudsWhite.tilePositionX += 0.5;
@@ -202,6 +206,27 @@ class LevelEditorScene extends Phaser.Scene {
         console.log(this.enemies)
       }
     
+      //method that posts the level data to the server
+      async postLevelData(levelData, enemies){
+        try {
+            const response = await fetch("http://localhost:5001/levels",
+                {
+                    method:"POST",
+                    mode:'cors', //very important for sending things in the body
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({"author" : "Teddy",
+                    "levelData" : {"levelMap" : levelData, "enemies" : enemies}})
+                }
+            )
+            const dataToReturn = await response.json();
+            return dataToReturn;
+        } catch (error) {
+            return error;
+        }
+      }
+
 }
 
 export default LevelEditorScene;

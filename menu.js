@@ -50,7 +50,8 @@ class MenuScene extends Phaser.Scene {
         this.startBtn.on('pointerdown', () => {
             this.themeMusic.pause();
             console.log("Clicked")
-            game.scene.start('GameScene', {level: false});
+            // game.scene.start('GameScene', {level: false});
+            game.scene.start('LevelSelectScene');
             game.scene.stop('MenuScene');
     
         });
