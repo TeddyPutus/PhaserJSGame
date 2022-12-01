@@ -1,5 +1,6 @@
 import './style.css'
 import Phaser from "phaser";
+import game from './main';
 import levelData from './levelData.json'; //this contains the map, and co-ordinate data about enemies
 
 class GameScene extends Phaser.Scene {
@@ -210,6 +211,12 @@ class GameScene extends Phaser.Scene {
         if(this.livesLeft === 0){
             this.themeMusic.pause();
             this.gameOverMusic.resume();
+            //this almost works as a return to main menu, it is still trying to execute something and throwing errors
+            // this.time.addEvent({ delay: 5000, callback: () => {
+            //                                                     this.gameOverMusic.pause();
+            //                                                     game.scene.start('MenuScene');
+            //                                                     game.scene.stop('GameScene');
+            //                                                   }, callbackScope: game, loop: false });
         }
       
       }
@@ -277,6 +284,7 @@ class GameScene extends Phaser.Scene {
                 this.gameOver(player, game);
                 this.gameOverText.setText(this.livesLeft > 0 ? ' ' : 'Game Over'); 
                 game.physics.pause();
+                //
               }
             }, null, game);
         }
@@ -379,12 +387,5 @@ class GameScene extends Phaser.Scene {
 
 export default GameScene;
 
-//this stuff is needed for a level creatore panning effect
-  // controlConfig = {
-  //     camera: this.cameras.main,
-  //     left: cursors.left,
-  //     right: cursors.right,
-  //     speed: 0.5
-  // };
-
-  // controls = new Phaser.Cameras.Controls.FixedKeyControl(controlConfig);
+//this is how you restart a scene allegedly
+//this.scene.restart();

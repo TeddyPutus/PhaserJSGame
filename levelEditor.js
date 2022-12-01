@@ -185,6 +185,13 @@ class LevelEditorScene extends Phaser.Scene {
 
       configEnemyEndpoint(pointer){
         this.enemy.endX = pointer.worldX;
+
+        //because of the way our enemy movement works, we want to make endX smaller than startX, swap if needed
+        if(this.enemy.endX > this.enemy.startX){
+            let tempValue = this.enemy.startX;
+            this.enemy.startX = this.enemy.endX;
+            this.enemy.endX = tempValue;
+        }
         
         this.enemies.push(this.enemy);
         this.enemy = {};
