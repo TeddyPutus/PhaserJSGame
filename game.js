@@ -17,6 +17,12 @@ class GameScene extends Phaser.Scene {
       this.enemies = [];
     }
 
+    init(data)
+    {
+        if(data.level !== false) this.levelData = data.level;
+        else this.levelData = false;
+    }
+
     preload(){ //sprite loading, any other prep pre-game
 
         // load the PNG tileset
@@ -81,7 +87,7 @@ class GameScene extends Phaser.Scene {
         this.gameOverMusic.pause();
       
         // When loading from an array, make sure to specify the tileWidth and tileHeight
-        this.map = this.make.tilemap({ data: levelData[0].levelMap, tileWidth: 16, tileHeight: 16 });
+        this.map = this.make.tilemap({ data: this.levelData !== false ? this.levelData.levelMap : levelData[0].levelMap, tileWidth: 16, tileHeight: 16 });
         this.tiles = this.map.addTilesetImage('tiles', 'tiles');
         this.layer = this.map.createLayer(0, this.tiles, 0, 0);
       
@@ -247,7 +253,7 @@ class GameScene extends Phaser.Scene {
       }
       
       loadEnemies(game){
-        for(let newEnemy of levelData[0].enemies){
+        for(let newEnemy of this.levelData !== false ? this.levelData.enemies: levelData[0].enemies){
             this.enemy = game.physics.add.sprite(newEnemy.startX, newEnemy.startY, 'enemy');
             this.enemies.push({enemyObject: this.enemy, startX: newEnemy.startX, endX: newEnemy.endX});
             game.physics.add.collider(this.enemy, this.layer); //this stops sprite from falling through the floor

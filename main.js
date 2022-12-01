@@ -16,7 +16,7 @@ const game = new Phaser.Game({
         debug: false
     }
   },
-  scene : [MenuScene, LevelEditorScene, GameScene ] 
+  scene : [MenuScene, LevelEditorScene, GameScene ]
 }) 
 
 export default game;

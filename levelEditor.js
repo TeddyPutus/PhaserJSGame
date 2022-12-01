@@ -11,7 +11,7 @@ class LevelEditorScene extends Phaser.Scene {
 
         //we need these to store map data we will eventually save to json
         this.enemies = [];
-        this.enemy;
+        this.enemy = {};
         // this.map, this.tiles, this.layer; //data to hold the tilemap and show it on screen
         this.layer;
 
@@ -19,7 +19,8 @@ class LevelEditorScene extends Phaser.Scene {
         this.tileBtn, this.playBtn, this.enemyBtn;
         this.sky, this.themeMusic, this.cloudsWhite, this.cloudsWhiteSmall;
         
-        this.placeTile = false, this.placeEnemy = false;
+        this.placeTile = false, this.placeEnemy = false, this.placeEnemyEndPoint = false;
+        this.text;
     }
 
     preload(){ //sprite loading, any other prep pre-game
@@ -39,6 +40,12 @@ class LevelEditorScene extends Phaser.Scene {
 
         //load the tile data
         this.load.image('tiles', 'assets/tileset.png');
+
+        // this.load.image('enemy', 'assets/robot-sprite.png');
+        this.load.spritesheet('enemy', 'assets/robot-sprite.png',  {
+            frameWidth: 80,
+            frameHeight: 111
+            }); //image is split into series of frames
       } 
       
       create(){ //pre-game loop set up
@@ -68,11 +75,20 @@ class LevelEditorScene extends Phaser.Scene {
         
 
         //test to see if we can get useful tile data on click
-        this.input.on('pointerup', (pointer) => {
-            let tile = this.map.getTileAtWorldXY(pointer.worldX, pointer.worldY, true);
-            tile.index = tile.index === -1? 1 : -1; //toggle between platform and not platform
-            console.log(pointer.worldX, pointer.worldY, tile);
-            console.log(this.layer.layer.data) //this contains map data as array of tile objects - we are only concerned with the .index of each element!
+        this.input.on('pointerdown', (pointer) => {
+            if(pointer.worldY >= 99){
+                let tile = this.map.getTileAtWorldXY(pointer.worldX, pointer.worldY, true);
+                if(this.placeTile){
+                    tile.index = tile.index === -1? 1 : -1; //toggle between platform and not platform
+                    console.log(this.layer.layer.data) //this contains map data as array of tile objects - we are only concerned with the .index of each element!
+                }else if(this.placeEnemy){
+                    this.configEnemy(pointer);//this is more complicated as there is an additional end checkpoint we want to add
+                }else if(this.placeEnemyEndPoint){ //we have placed an enemy, but not given the end point for their patrol
+                    this.configEnemyEndpoint(pointer);
+                }
+            }
+            
+            
           }, this);
 
 
@@ -86,21 +102,42 @@ class LevelEditorScene extends Phaser.Scene {
         this.playBtn.setScrollFactor(0);
         this.enemyBtn.setScrollFactor(0);
 
-        // this.startBtn.setInteractive();
-        // this.startBtn.on('pointerdown', () => {
-        //     this.themeMusic.pause();
-        //     console.log("Clicked")
-        //     game.scene.start('GameScene');
-    
-        // });
+        //toggle what we are placing
+        this.tileBtn.on('pointerdown', () => {
+            if(!this.placeEnemyEndPoint){
+                this.placeTile = true;
+                this.placeEnemy = false; 
+            }
+        });
 
-        // this.levelEditorBtn.setInteractive();
-        // this.levelEditorBtn.on('pointerdown', () => {
-        //     this.themeMusic.pause();
-        //     console.log("Clicked")
-        //     game.scene.start('LevelEditorScene'); //not yet implemented!
+        this.enemyBtn.on('pointerdown', () => {
+            if(!this.placeEnemyEndPoint){
+                this.placeEnemy = true;
+                this.placeTile = false;
+            } 
+        });
+
+        this.playBtn.on('pointerdown', () => {
+            // this.themeMusic.pause();
+            let levelData = []; //defaultLevelData[0].levelMap;
+            for(let i = 0; i<= 37; i++){
+                let row = [];
+                for(let x = 0; x <=206 ; x++){
+                    row.push(this.layer.layer.data[i][x].index);
+                }
+                levelData.push(row);
+            }
+
+            game.scene.start('GameScene', {level : {
+                //need to filter the layer data, we want an array that contains .index of each element
+                levelMap : levelData, enemies: this.enemies
+            }});
+            game.scene.stop('LevelEditorScene');
     
-        // });
+        });
+
+        this.text = this.add.text(250, 300, ' ', { fontSize: '32px', fill: '#000' });
+        this.text.setScrollFactor(0);
 
         //lets the user move the camera with the cursor keys, it is not locked to a particular sprite or object
         this.cursors = this.input.keyboard.createCursorKeys();
@@ -123,9 +160,40 @@ class LevelEditorScene extends Phaser.Scene {
         this.cloudsWhite.tilePositionX += 0.5;
         this.cloudsWhiteSmall.tilePositionX += 0.25;
         this.controls.update(delta * 0.0025); //needs a stupidly small number to slow down scrolling, otherwise it will scroll straight to the end
+        this.text.setText(this.placeEnemyEndPoint ? "Select Endpoint" : " ");
 
       }
       
+      configEnemy(pointer){
+        //disable adding another new enemy, because we want to specify the endpoint first
+        this.placeEnemy = false;
+        this.placeEnemyEndPoint = true;
+        let newEnemy = this.add.image(pointer.worldX, pointer.worldY, 'enemy');
+        newEnemy.setInteractive();
+        newEnemy.on('pointerdown', () => {
+            //this filter function will remove the enemy from our enemies array
+            this.enemies = this.enemies.filter(function (element){
+                return element.startX != newEnemy.x;
+            })
+            newEnemy.destroy();
+        });
+
+        //store the startX and startY
+        this.enemy.startX = pointer.worldX;
+        this.enemy.startY = pointer.worldY;
+      }
+
+      configEnemyEndpoint(pointer){
+        this.enemy.endX = pointer.worldX;
+        
+        this.enemies.push(this.enemy);
+        this.enemy = {};
+
+        this.placeEnemy = true;
+        this.placeEnemyEndPoint = false;
+
+        console.log(this.enemies)
+      }
     
 }
 
