@@ -156,6 +156,14 @@ class GameScene extends Phaser.Scene {
       
         //Listen for keyboard inputs
         this.cursors = this.input.keyboard.createCursorKeys();
+        this.input.keyboard.on('keydown-' + 'R', () => {
+          this.themeMusic.pause();
+          this.victoryMusic.pause();
+          this.deathSound.pause();
+          game.scene.start('MenuScene');
+          game.scene.stop('GameScene');
+        });
+
         
         //Set the world bounds to equal the size of our tilemap - this means if change the tilemap, the world bounds will update
         this.physics.world.setBounds(0, 0, this.layer.width, this.layer.height)
@@ -268,7 +276,7 @@ class GameScene extends Phaser.Scene {
       }
       
       loadPlayer(game){
-        this.player = game.physics.add.sprite(100, 450, 'player'); //place at start of level
+        this.player = game.physics.add.sprite(100, 100, 'player'); //place at start of level
         this.player.setBounce(0.2); //how much they bounce when hitting ground
         this.player.body.setGravityY(10); //how much gravity affects them (the lower, the higher they jump)
         // player.setCollideWorldBounds(true) //Set to true if you don't want them to go off screen

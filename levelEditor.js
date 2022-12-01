@@ -9,6 +9,9 @@ class LevelEditorScene extends Phaser.Scene {
         super('LevelEditorScene');
         this.menuTitle;
 
+        //this can be increased or decreased here as needed, until a drag function is implemented, it is very time consuming to make the map
+        this.mapSize = 75;
+
         //we need these to store map data we will eventually save to json
         this.enemies = [];
         this.enemy = {};
@@ -53,7 +56,7 @@ class LevelEditorScene extends Phaser.Scene {
         let levelData = []; //defaultLevelData[0].levelMap;
         for(let i = 0; i<= 37; i++){
             let row = [];
-            for(let x = 0; x <=206 ; x++){
+            for(let x = 0; x <= this.mapSize ; x++){
                 row.push(-1);
             }
             levelData.push(row);
@@ -80,7 +83,6 @@ class LevelEditorScene extends Phaser.Scene {
                 let tile = this.map.getTileAtWorldXY(pointer.worldX, pointer.worldY, true);
                 if(this.placeTile){
                     tile.index = tile.index === -1? 1 : -1; //toggle between platform and not platform
-                    console.log(this.layer.layer.data) //this contains map data as array of tile objects - we are only concerned with the .index of each element!
                 }else if(this.placeEnemy){
                     this.configEnemy(pointer);//this is more complicated as there is an additional end checkpoint we want to add
                 }else if(this.placeEnemyEndPoint){ //we have placed an enemy, but not given the end point for their patrol
@@ -122,7 +124,7 @@ class LevelEditorScene extends Phaser.Scene {
             let levelData = []; //defaultLevelData[0].levelMap;
             for(let i = 0; i<= 37; i++){
                 let row = [];
-                for(let x = 0; x <=206 ; x++){
+                for(let x = 0; x <= this.mapSize ; x++){
                     row.push(this.layer.layer.data[i][x].index);
                 }
                 levelData.push(row);
@@ -151,6 +153,13 @@ class LevelEditorScene extends Phaser.Scene {
             right: this.cursors.right,
             speed: 0.5
         };
+
+        //Enables reset of to main menu
+        this.input.keyboard.on('keydown-' + 'R', () => {
+            this.themeMusic.pause();
+            game.scene.start('MenuScene');
+            game.scene.stop('LevelEditorScene');
+          });
 
         this.controls = new Phaser.Cameras.Controls.FixedKeyControl(this.controlConfig);
         //Set the world bounds to equal the size of our tilemap - this menas if change the tilemap, the world bounds will update

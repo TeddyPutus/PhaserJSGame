@@ -82,6 +82,13 @@ class LevelSelectScene extends Phaser.Scene {
            this.levelSelected = this.levelSelected > 1 ? this.levelSelected - 1 : this.retrievedLevels.length + 1 ;
    
        });
+
+       //allows use to reset to main menu
+       this.input.keyboard.on('keydown-' + 'R', () => {
+        this.themeMusic.pause();
+        game.scene.start('MenuScene');
+        game.scene.stop('LevelSelectScene');
+      });
     }
     
     update(){
