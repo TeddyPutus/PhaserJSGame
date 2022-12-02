@@ -30,6 +30,7 @@ body {
   place-items: center;
   align-items: center;
   justify-content: center;
+  background-color: skyblue;
   background-image: url("https://www.giantbomb.com/a/uploads/scale_super/9/99864/2420183-nintendo_gameboy.jpg");
   background-repeat: no-repeat;
   background-position: center;

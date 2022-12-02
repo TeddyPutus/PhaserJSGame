@@ -10,6 +10,7 @@ class GameScene extends Phaser.Scene {
         this.player, this.cursors, this.scoreText, this.gameOverText, this.livesLeftText, this.enemy, this.controlConfig, this.controls, this.cloudsWhite, this.cloudsWhiteSmall, this.bombs, this.stars, this.layer;
         this.score = 0, this.bombOrStarDelay = 4000, this.bombOrStarIterations = 0, this.livesLeft = 3, this.gameOverBool = false;
         this.themeMusic, this.jumpSound, this.starSound, this.victoryMusic, this.deathSound, this.gameOverMusic;
+        this.fireballBool = true;
       
       //array of objects
       /**
@@ -59,6 +60,13 @@ class GameScene extends Phaser.Scene {
         this.load.audio("star", ["assets/star.wav"]);
         this.load.audio("death", ["assets/died.wav"]);
         this.load.audio("gameOver", ["assets/gameOver.mp3"]);
+
+        //massive amounts of fireball
+        this.load.image('fire0', '/assets/Fireball/Effects_Fire_0_01.png');
+        this.load.image('fire1', '/assets/Fireball/Effects_Fire_0_02.png');
+        this.load.image('fire2', '/assets/Fireball/Effects_Fire_0_03.png');
+        this.load.image('fire3', '/assets/Fireball/Effects_Fire_0_04.png');
+        this.load.image('fire4', '/assets/Fireball/Effects_Fire_0_05.png');
       }
       
       
@@ -105,6 +113,7 @@ class GameScene extends Phaser.Scene {
         //These groups will be added to by our timed event
         this.bombs = this.physics.add.group();
         this.stars = this.physics.add.group();
+        this.fireballs = this.physics.add.group();
       
         this.physics.add.collider(this.bombs, this.layer);
         this.physics.add.collider(this.stars, this.layer);
@@ -144,6 +153,19 @@ class GameScene extends Phaser.Scene {
           repeat: -1
         })
       
+        this.anims.create({
+          key: 'explosion',
+          frames: [
+              { key: 'fire0' },
+              { key: 'fire1' },
+              { key: 'fire2' },
+              { key: 'fire3' },
+              { key: 'fire4' }
+          ],
+          frameRate: 10,
+          repeat: 1
+      });
+
         //setting the scroll factor to 0 makes it track the camera
         this.scoreText = this.add.text(16, 16, 'Score: 0', { fontSize: '32px', fill: '#000' });
         this.scoreText.setScrollFactor(0);
@@ -156,6 +178,31 @@ class GameScene extends Phaser.Scene {
       
         //Listen for keyboard inputs
         this.cursors = this.input.keyboard.createCursorKeys();
+        this.input.keyboard.on('keydown-' + 'R', () => {
+          this.themeMusic.pause();
+          this.victoryMusic.pause();
+          this.gameOverMusic.pause();
+          this.deathSound.pause();
+
+          this.livesLeft = 3;
+          this.gameOverBool = false;
+          for(let enemy of this.enemies){
+            enemy.enemyObject.disableBody(true, true);
+          }
+          this.enemies = [];
+          this.stars = false;
+          this.player = false;
+          this.fireballs = false;
+
+          game.scene.start('MenuScene');
+          game.scene.stop('GameScene');
+        });
+
+        this.input.keyboard.on('keydown-' + 'S', () => {
+          console.log("shoot")
+          this.createFireball();
+        });
+
         
         //Set the world bounds to equal the size of our tilemap - this means if change the tilemap, the world bounds will update
         this.physics.world.setBounds(0, 0, this.layer.width, this.layer.height)
@@ -233,7 +280,7 @@ class GameScene extends Phaser.Scene {
         for(let i = 0; i < numOfItems; i ++){
           bombOrStar = this.randomIntBetweenLimits(1, 2); //1 = bomb, 2 = star
           xValue = this.randomIntBetweenLimits(this.player.body.x - 250, this.player.body.x + 250)
-          yValue = this.randomIntBetweenLimits(0, this.layer.height)
+          yValue = this.randomIntBetweenLimits(0, Math.floor(this.layer.height / 2))
           if(bombOrStar === 1){ //make bombs
             object = this.bombs.create(xValue, yValue, 'bomb');
           } else{ //make stars
@@ -254,6 +301,42 @@ class GameScene extends Phaser.Scene {
         }
       }
       
+      createFireball(){
+        if(this.gameOverBool) return;
+        if(this.fireballBool === true){
+            this.fireballBool = false;
+            let fireball = this.fireballs.create(this.player.body.x, this. player.body.y, 'fire0')
+
+            if(this.cursors.left.isDown) fireball.flipX = true;
+            let xVelocity = this.cursors.left.isDown ? -100 : 100;
+
+            fireball.anims.play('explosion', true);
+            fireball.setScale(0.5);
+            fireball.setGravityY(-300);
+            fireball.setVelocityX(xVelocity);
+
+            this.physics.add.overlap(fireball, this.bombs, (fireball, bomb) => {this.destroyBomb(fireball, bomb)}, null, this);
+
+            for(let enemy of this.enemies){
+              this.physics.add.overlap(fireball, enemy.enemyObject, (fireball, enemy) => {this.destroyBomb(fireball, enemy)}, null, this);
+            }
+            //destroy after some period of time, so the page isn't filled with fireballs
+            this.time.addEvent({ delay: 2000, callback: () => {fireball.disableBody(true, true);}, callbackScope: this, loop: false });
+
+            //limit number of fireballs with a delayed event
+            this.time.addEvent({ delay: 500, callback: () => {this.fireballBool = true;}, callbackScope: this, loop: false });
+          }
+        
+      }
+
+      destroyBomb(fireball, bomb){
+        bomb.disableBody(true, true);
+        fireball.disableBody(true, true)
+        this.deathSound.play();
+        this.score += 5;
+        this.scoreText.setText('Score: ' + this.score);
+      }
+
       //function to return a random number between min and max
       randomIntBetweenLimits(min, max){
         return Math.floor(Math.random() * (max - min + 1) + min);
@@ -262,13 +345,14 @@ class GameScene extends Phaser.Scene {
       loadEnemies(game){
         for(let newEnemy of this.levelData !== false ? this.levelData.enemies: levelData[0].enemies){
             this.enemy = game.physics.add.sprite(newEnemy.startX, newEnemy.startY, 'enemy');
+
             this.enemies.push({enemyObject: this.enemy, startX: newEnemy.startX, endX: newEnemy.endX});
             game.physics.add.collider(this.enemy, this.layer); //this stops sprite from falling through the floor
         }
       }
       
       loadPlayer(game){
-        this.player = game.physics.add.sprite(100, 450, 'player'); //place at start of level
+        this.player = game.physics.add.sprite(100, 100, 'player'); //place at start of level
         this.player.setBounce(0.2); //how much they bounce when hitting ground
         this.player.body.setGravityY(10); //how much gravity affects them (the lower, the higher they jump)
         // player.setCollideWorldBounds(true) //Set to true if you don't want them to go off screen
@@ -289,7 +373,6 @@ class GameScene extends Phaser.Scene {
             }, null, game);
         }
       
-        
          game.cameras.main.startFollow(this.player);
       }
       

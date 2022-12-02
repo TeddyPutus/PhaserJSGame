@@ -23,8 +23,8 @@ class MenuScene extends Phaser.Scene {
         this.load.image("clouds-white-small", "assets/clouds-white-small.png");
         this.load.image("logo", "assets/Jump-Boi.png");
 
-        this.load.image("startGameBtn", "assets/startGameBtn.png");
-        this.load.image("levelEditorBtn", "assets/levelEditorBtn.png");
+        this.load.image("startGameBtn", "assets/Start.png");
+        this.load.image("levelEditorBtn", "assets/Creator.png");
      
         //load music and sound effects
         this.load.audio("theme", ["assets/theme.mp3"]);
@@ -43,14 +43,15 @@ class MenuScene extends Phaser.Scene {
         // this.menuTitle = this.add.text(300, 200, 'Main Menu', { fontSize: '32px', fill: '#000' })
         this.add.image(400, 200, 'logo')
 
-        this.startBtn = this.add.image(500, 400, 'startGameBtn');
+        this.startBtn = this.add.image(560, 400, 'startGameBtn');
         this.levelEditorBtn = this.add.image(300, 400, 'levelEditorBtn');
 
         this.startBtn.setInteractive();
         this.startBtn.on('pointerdown', () => {
             this.themeMusic.pause();
             console.log("Clicked")
-            game.scene.start('GameScene', {level: false});
+            // game.scene.start('GameScene', {level: false});
+            game.scene.start('LevelSelectScene');
             game.scene.stop('MenuScene');
     
         });
