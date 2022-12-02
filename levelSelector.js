@@ -26,9 +26,9 @@ class LevelSelectScene extends Phaser.Scene {
       this.load.image("clouds-white-small", "assets/clouds-white-small.png");
       this.load.image("logo", "assets/Jump-Boi.png");
 
-      this.load.image("startGameBtn", "assets/startGameBtn.png");
-      this.load.image("levelEditorBtn", "assets/levelEditorBtn.png");
-      this.load.image("nextBtn", "assets/nextBtn.png");
+      this.load.image("startGameBtn", "assets/Start.png");
+      this.load.image("levelEditorBtn", "assets/CreatorBtn.png");
+      this.load.image("nextBtn", "assets/next.png");
    
       //load music and sound effects
       this.load.audio("theme", ["assets/theme.mp3"]);
@@ -66,16 +66,18 @@ class LevelSelectScene extends Phaser.Scene {
    
        });
 
-       this.nextBtn = this.add.image(600, 400, 'nextBtn');
+       this.nextBtn = this.add.image(500, 400, 'nextBtn');
        this.nextBtn.setInteractive();
+       this.nextBtn.flipY = true;
        this.nextBtn.on('pointerdown', async () => {
            //cycles through the list, 1 will be default level, subsequent levels will be DB stored levels
            this.levelSelected = this.levelSelected < this.retrievedLevels.length + 1 ? this.levelSelected + 1 : 1;
    
        });
 
-       this.prevBtn = this.add.image(200, 400, 'nextBtn');
+       this.prevBtn = this.add.image(300, 400, 'nextBtn');
        this.prevBtn.flipX = true;
+       this.prevBtn.flipY = true;
        this.prevBtn.setInteractive();
        this.prevBtn.on('pointerdown', async () => {
            //cycles through the list, 1 will be default level, subsequent levels will be DB stored levels

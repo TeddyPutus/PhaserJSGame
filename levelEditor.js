@@ -36,7 +36,7 @@ class LevelEditorScene extends Phaser.Scene {
 
         this.load.image("tileBtn", "assets/placeTileBtn.png");
         this.load.image("enemyBtn", "assets/placeEnemyBtn.png");
-        this.load.image("playBtn", 'assets/playLvlBtn.png');
+        this.load.image("playBtn", 'assets/floppy.png');
      
         //load music and sound effects
         this.load.audio("theme", ["assets/theme.mp3"]);
@@ -49,6 +49,13 @@ class LevelEditorScene extends Phaser.Scene {
             frameWidth: 80,
             frameHeight: 111
             }); //image is split into series of frames
+
+        //swiping is done via plugin    
+        this.load.scenePlugin({
+            key: 'rexgesturesplugin',
+            url: 'https://raw.githubusercontent.com/rexrainbow/phaser3-rex-notes/master/dist/rexgesturesplugin.min.js',
+            sceneKey: 'rexGestures'
+        });   
       } 
       
       create(){ //pre-game loop set up
@@ -76,8 +83,21 @@ class LevelEditorScene extends Phaser.Scene {
         this.layer = this.map.createLayer(0, this.tiles, 0, 0);
 
         
+        //detect a swipe so it is easier to make platforms
+        this.swipeInput = this.rexGestures.add.swipe({ velocityThreshold: 1000 })
+        .on('swipe', function (swipe) {
+            
+            if(swipe.lastPointer.downY  >= 99 && this.placeTile){
+                for(let i = swipe.lastPointer.downX; i <= swipe.lastPointer.upX; i+=16){
+                    let tile = this.map.getTileAtWorldXY(i, swipe.lastPointer.downY, true);
+                    tile.index = tile.index === -1? 1 : -1; //toggle between platform and not platform    
+                }         
+            }
 
-        //test to see if we can get useful tile data on click
+
+        }, this);
+        
+
         this.input.on('pointerdown', (pointer) => {
             if(pointer.worldY >= 99){
                 let tile = this.map.getTileAtWorldXY(pointer.worldX, pointer.worldY, true);
@@ -95,8 +115,9 @@ class LevelEditorScene extends Phaser.Scene {
 
 
         this.tileBtn = this.add.image(100, 25, 'tileBtn');
-        this.playBtn = this.add.image(400, 25, 'playBtn');
-        this.enemyBtn = this.add.image(700, 25, 'enemyBtn');
+        this.playBtn = this.add.image(750, 25, 'playBtn');
+        this.playBtn.setScale(0.05);
+        this.enemyBtn = this.add.image(400, 25, 'enemyBtn');
         this.tileBtn.setInteractive();
         this.playBtn.setInteractive();
         this.enemyBtn.setInteractive();

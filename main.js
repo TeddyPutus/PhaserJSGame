@@ -14,10 +14,10 @@ const game = new Phaser.Game({
     default: 'arcade',
     arcade: {
         gravity: { y: 300 },
-        debug: false
+        debug: true
     }
   },
-  scene : [MenuScene, LevelSelectScene, LevelEditorScene, GameScene ]
+  scene : [  MenuScene, LevelEditorScene, LevelSelectScene, GameScene ]
 }) 
 
 export default game;
