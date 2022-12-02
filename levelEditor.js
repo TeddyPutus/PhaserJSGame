@@ -37,6 +37,7 @@ class LevelEditorScene extends Phaser.Scene {
         this.load.image("tileBtn", "assets/placeTileBtn.png");
         this.load.image("enemyBtn", "assets/placeEnemyBtn.png");
         this.load.image("playBtn", 'assets/floppy.png');
+        this.load.image("resetBtn", 'assets/reset.png');
      
         //load music and sound effects
         this.load.audio("theme", ["assets/theme.mp3"]);
@@ -84,13 +85,13 @@ class LevelEditorScene extends Phaser.Scene {
 
         
         //detect a swipe so it is easier to make platforms
-        this.swipeInput = this.rexGestures.add.swipe({ velocityThreshold: 1000 })
+        this.swipeInput = this.rexGestures.add.swipe({ velocityThreshold: 500 })
         .on('swipe', function (swipe) {
-            
+            console.log(swipe)
             if(swipe.lastPointer.downY  >= 99 && this.placeTile){
-                for(let i = swipe.lastPointer.downX; i <= swipe.lastPointer.upX; i+=16){
+                for(let i = swipe.lastPointer.worldX; i <= swipe.lastPointer.worldX + swipe.lastPointer.upX; i+=16){
                     let tile = this.map.getTileAtWorldXY(i, swipe.lastPointer.downY, true);
-                    tile.index = tile.index === -1? 1 : -1; //toggle between platform and not platform    
+                    if(tile !== null)tile.index = 1; //tile.index === -1? 1 : -1; //toggle between platform and not platform    
                 }         
             }
 
@@ -113,15 +114,21 @@ class LevelEditorScene extends Phaser.Scene {
             
           }, this);
 
-
+        //place buttons, scale where needed
         this.tileBtn = this.add.image(100, 25, 'tileBtn');
         this.playBtn = this.add.image(750, 25, 'playBtn');
         this.playBtn.setScale(0.05);
+        this.resetBtn = this.add.image(600, 25, 'resetBtn');
+        this.resetBtn.setScale(0.08);
         this.enemyBtn = this.add.image(400, 25, 'enemyBtn');
+        //make buttons clickable
         this.tileBtn.setInteractive();
         this.playBtn.setInteractive();
+        this.resetBtn.setInteractive();
         this.enemyBtn.setInteractive();
+        //lock buttons to camera
         this.tileBtn.setScrollFactor(0);
+        this.resetBtn.setScrollFactor(0);
         this.playBtn.setScrollFactor(0);
         this.enemyBtn.setScrollFactor(0);
 
@@ -140,6 +147,12 @@ class LevelEditorScene extends Phaser.Scene {
             } 
         });
 
+        //reset the tilemap data when reset button clicked
+        this.resetBtn.on('pointerdown', () => {
+            this.resetMap();
+        });
+
+        //When we click the save button, upload the file and go to main menus
         this.playBtn.on('pointerdown', async () => {
             // this.themeMusic.pause();
             let levelData = []; //defaultLevelData[0].levelMap;
@@ -154,11 +167,6 @@ class LevelEditorScene extends Phaser.Scene {
             await this.postLevelData(levelData, this.enemies);
 
             game.scene.start('MenuScene');
-
-            // game.scene.start('GameScene', {level : {
-            //     //need to filter the layer data, we want an array that contains .index of each element
-            //     levelMap : levelData, enemies: this.enemies
-            // }});
             game.scene.stop('LevelEditorScene');
     
         });
@@ -257,6 +265,14 @@ class LevelEditorScene extends Phaser.Scene {
         }
       }
 
+      //method resets the map to empty
+      resetMap(){
+        for(let i = 0; i<= 37; i++){
+            for(let x = 0; x <= this.mapSize ; x++){
+                this.layer.layer.data[i][x].index = -1;
+            }
+        }
+      }
 }
 
 export default LevelEditorScene;

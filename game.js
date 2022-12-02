@@ -186,6 +186,9 @@ class GameScene extends Phaser.Scene {
 
           this.livesLeft = 3;
           this.gameOverBool = false;
+          for(let enemy of this.enemies){
+            enemy.enemyObject.disableBody(true, true);
+          }
           this.enemies = [];
           this.stars = false;
           this.player = false;
