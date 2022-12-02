@@ -10,7 +10,7 @@ class GameScene extends Phaser.Scene {
         this.player, this.cursors, this.scoreText, this.gameOverText, this.livesLeftText, this.enemy, this.controlConfig, this.controls, this.cloudsWhite, this.cloudsWhiteSmall, this.bombs, this.stars, this.layer;
         this.score = 0, this.bombOrStarDelay = 4000, this.bombOrStarIterations = 0, this.livesLeft = 3, this.gameOverBool = false;
         this.themeMusic, this.jumpSound, this.starSound, this.victoryMusic, this.deathSound, this.gameOverMusic;
-        this.fireballQuantity = 0;
+        this.fireballBool = true;
       
       //array of objects
       /**
@@ -181,7 +181,16 @@ class GameScene extends Phaser.Scene {
         this.input.keyboard.on('keydown-' + 'R', () => {
           this.themeMusic.pause();
           this.victoryMusic.pause();
+          this.gameOverMusic.pause();
           this.deathSound.pause();
+
+          this.livesLeft = 3;
+          this.gameOverBool = false;
+          this.enemies = [];
+          this.stars = false;
+          this.player = false;
+          this.fireballs = false;
+
           game.scene.start('MenuScene');
           game.scene.stop('GameScene');
         });
@@ -290,23 +299,31 @@ class GameScene extends Phaser.Scene {
       }
       
       createFireball(){
-        let fireball = this.fireballs.create(this.player.body.x, this. player.body.y, 'fire0')
+        if(this.gameOverBool) return;
+        if(this.fireballBool === true){
+            this.fireballBool = false;
+            let fireball = this.fireballs.create(this.player.body.x, this. player.body.y, 'fire0')
 
-        if(this.cursors.left.isDown) fireball.flipX = true;
-        let xVelocity = this.cursors.left.isDown ? -100 : 100;
+            if(this.cursors.left.isDown) fireball.flipX = true;
+            let xVelocity = this.cursors.left.isDown ? -100 : 100;
 
-        fireball.anims.play('explosion', true);
-        fireball.setScale(0.5);
-        fireball.setGravityY(-300);
-        fireball.setVelocityX(xVelocity);
+            fireball.anims.play('explosion', true);
+            fireball.setScale(0.5);
+            fireball.setGravityY(-300);
+            fireball.setVelocityX(xVelocity);
 
-        this.physics.add.overlap(fireball, this.bombs, (fireball, bomb) => {this.destroyBomb(fireball, bomb)}, null, this);
+            this.physics.add.overlap(fireball, this.bombs, (fireball, bomb) => {this.destroyBomb(fireball, bomb)}, null, this);
 
-        for(let enemy of this.enemies){
-          this.physics.add.overlap(fireball, enemy.enemyObject, (fireball, enemy) => {this.destroyBomb(fireball, enemy)}, null, this);
-        }
-        //destroy after some period of time, so the page isn't filled with fireballs
-        this.time.addEvent({ delay: 2000, callback: () => {fireball.disableBody(true, true)}, callbackScope: this, loop: true });
+            for(let enemy of this.enemies){
+              this.physics.add.overlap(fireball, enemy.enemyObject, (fireball, enemy) => {this.destroyBomb(fireball, enemy)}, null, this);
+            }
+            //destroy after some period of time, so the page isn't filled with fireballs
+            this.time.addEvent({ delay: 2000, callback: () => {fireball.disableBody(true, true);}, callbackScope: this, loop: false });
+
+            //limit number of fireballs with a delayed event
+            this.time.addEvent({ delay: 500, callback: () => {this.fireballBool = true;}, callbackScope: this, loop: false });
+          }
+        
       }
 
       destroyBomb(fireball, bomb){
